@@ -1,6 +1,7 @@
 import arcade
+from game_logic import GameLogic, GameState
+from rendering import Renderer
 
-# константы
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 CENTER_X = SCREEN_WIDTH // 2
@@ -11,10 +12,8 @@ class MainMenuView(arcade.View):
     def __init__(self):
         super().__init__()
 
-        # создаем список для фона
         self.background_list = arcade.SpriteList()
 
-        # создаем спрайт фона
         self.background = arcade.Sprite("Sprites/MenuBackground.png")
         self.background.center_x = CENTER_X
         self.background.center_y = CENTER_Y
@@ -22,10 +21,8 @@ class MainMenuView(arcade.View):
         self.background.height = SCREEN_HEIGHT
         self.background_list.append(self.background)
 
-        # создаем список спрайтов для кнопок
         self.button_list = arcade.SpriteList()
 
-        # создаем кнопки
         self.play_button = arcade.Sprite("Sprites/PlayButton.png")
         self.play_button.center_x = CENTER_X
         self.play_button.center_y = CENTER_Y - 75
@@ -38,7 +35,6 @@ class MainMenuView(arcade.View):
         self.quit_button.center_x = CENTER_X
         self.quit_button.center_y = CENTER_Y - 175
 
-        # добавляем кнопки в список
         self.button_list.append(self.play_button)
         self.button_list.append(self.settings_button)
         self.button_list.append(self.quit_button)
@@ -62,87 +58,72 @@ class MainMenuView(arcade.View):
 class GameView(arcade.View):
     def __init__(self):
         super().__init__()
-
-        # список для кнопки
-        self.button_list = arcade.SpriteList()
-
-        # кнопка для перехода к экрану смерти
-        self.die_button = arcade.Sprite("Sprites/PlayButton.png")
-        self.die_button.center_x = CENTER_X
-        self.die_button.center_y = CENTER_Y - 50
-
-        self.button_list.append(self.die_button)
+        self.logic = GameLogic()
+        self.renderer = Renderer(self.logic)
+        self.logic.setup()
 
     def on_draw(self):
         self.clear()
-        arcade.set_background_color(arcade.color.BLACK)
+        self.renderer.draw()
 
-        # рисуем текст
-        arcade.draw_text(
-            "Здесь будет основная игра",
-            CENTER_X,
-            CENTER_Y + 100,
-            arcade.color.WHITE,
-            24,
-            anchor_x="center"
-        )
+        if self.logic.game_state == GameState.gameover:
+            self.window.show_view(DeathView(score=self.logic.score))
 
-        # рисуем кнопку
-        self.button_list.draw()
+        if self.logic.game_state == GameState.win:
+            self.window.show_view(WinView(self.logic.score))
+
+    def on_update(self, delta_time):
+        if self.logic.game_state == GameState.playing:
+            self.logic.update()
+
+    def on_key_press(self, key, modifers):
+        self.logic.on_key_press(key, modifers)
 
     def on_mouse_press(self, x, y, button, modifiers):
-        if self.die_button.collides_with_point((x, y)):
-            death_view = DeathView()
-            self.window.show_view(death_view)
+        if self.logic.game_state == GameState.gameover:
+            self.window.show_view(DeathView(score=self.logic.score))
 
 
 class DeathView(arcade.View):
-    def __init__(self):
+    def __init__(self, score: int):
         super().__init__()
-        self.store = 0  # количество монет
+        self.store = score  # количество монет
 
     def on_draw(self):
         self.clear()
         arcade.set_background_color(arcade.color.BLACK)
 
-        # рисуем текст игры
-        arcade.draw_text(
-            "GAME OVER",
-            CENTER_X,
-            CENTER_Y + 50,
-            arcade.color.RED,
-            48,
-            anchor_x="center"
-        )
+        arcade.draw_text("GAME OVER", CENTER_X, CENTER_Y + 50, arcade.color.RED, 48, anchor_x="center")
 
-        arcade.draw_text(
-            f"Store: {self.store}",
-            CENTER_X,
-            CENTER_Y - 50,
-            arcade.color.WHITE,
-            24,
-            anchor_x="center"
-        )
+        arcade.draw_text(f"Store: {self.store}", CENTER_X, CENTER_Y - 50, arcade.color.WHITE, 24, anchor_x="center")
 
     def on_mouse_press(self, x, y, button, modifiers):
         # возврат в меню по клику в любом месте
         self.window.show_view(MainMenuView())
 
 
+class WinView(arcade.View):
+    def __init__(self, score: int):
+        super().__init__()
+
+    def on_draw(self):
+        self.clear()
+        arcade.set_background_color(arcade.color.BLACK)
+
+        arcade.draw_text("WIN!!!", CENTER_X, CENTER_Y + 50, arcade.color.GREEN, 48, anchor_x="center")
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        self.window.show_view(MainMenuView())
+
+
 class SettingsView(arcade.View):
+    # TODO: Надо сделать экран настроек :)
     def on_draw(self):
         self.clear()
         arcade.set_background_color(arcade.color.DARK_SLATE_GRAY)
 
         # текст окна настроек
-        arcade.draw_text(
-            "Окно настроек",
-            CENTER_X,
-            CENTER_Y,
-            arcade.color.WHITE,
-            36,
-            anchor_x="center"
-        )
+        arcade.draw_text("Окно настроек", CENTER_X, CENTER_Y, arcade.color.WHITE, 36, anchor_x="center")
 
     def on_mouse_press(self, x, y, button, modifiers):
         # возврат в меню по клику в любом месте
@@ -150,9 +131,7 @@ class SettingsView(arcade.View):
 
 
 def main():
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, "TestMenu")
-
-    # создаем и показываем главное меню
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, "Home")
     menu_view = MainMenuView()
     window.show_view(menu_view)
 

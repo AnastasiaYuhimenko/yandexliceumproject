@@ -1,0 +1,45 @@
+[project]
+name = "pacman"
+version = "0.1.0"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "arcade",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.5",
+]
+
+[tool.ruff]
+exclude = [".venv", "alembic"]
+include = ["*.py"]
+line-length = 120
+indent-width = 4
+target-version = "py314"
+src = ["app"]
+
+
+[tool.ruff.lint]
+
+select = [
+    "E",   
+    "W",  
+    "F",  
+    "I",
+    "B", 
+    "C4", 
+    "SIM", 
+    "UP", 
+    "ASYNC",
+    "RUF",
+]
+
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"] 
+"tests/*" = ["S101"] 
